@@ -54,7 +54,7 @@
 BoardState makeTestBoardState()
 {
     return BoardState{ /*player_0_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 4, 4, 4, 4, 4 }, 0 }, 
-                       /*player_1_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 13, 4, 4, 4, 4 }, 0 }};
+                       /*player_1_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 4, 4, 4, 4, 4 }, 0 }};
 }
 
 int main(int argc, char** argv)
@@ -62,14 +62,19 @@ int main(int argc, char** argv)
     BoardState board_state{ makeTestBoardState() };
     const TurnExecutor turn_executor{};
 
-    std::cout << board_state.print() << std::endl;
+    std::cout << board_state.printForPlayer0() << std::endl;
 
+    for (std::size_t i = 0; i < 10; ++i)
     {
-        const TurnResult result{ turn_executor.playTurn(/*player_index*/ 1, /*pit_index*/ 1, board_state) };
-        std::cout << "Result:\n" << result << std::endl << std::endl;
-    }
+        const std::size_t player_index{ i % 2 };
+        const std::size_t pit_index{ static_cast<std::size_t>(std::rand() % 7) };
+        const TurnResult result{ turn_executor.playTurn(player_index, pit_index, board_state) };
 
-    std::cout << board_state.print() << std::endl;
+        std::cout << "Turn - player_index: " << player_index << ", pit_index: " << pit_index << std::endl;
+        std::cout << "Result:\n" << result << std::endl << std::endl;
+        std::cout << board_state.printForPlayer0() << std::endl;
+        std::cout << "---------------------------------------------------" << std::endl;
+    }
     
     return 0;
 }

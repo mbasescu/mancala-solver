@@ -127,12 +127,21 @@ public:
         return player_1_board_state_;
     }
 
-    std::string print() const
+    std::string printForPlayer0() const
     {
         std::stringstream ss{};
         ss << player_1_board_state_.printReversed() << std::endl;
-        ss << "    " << player_0_board_state_.print() << std::endl;
+        ss << "    " << player_0_board_state_.print();
     
+        return ss.str();
+    }
+
+    std::string printForPlayer1() const
+    {
+        std::stringstream ss{};
+        ss << player_0_board_state_.printReversed() << std::endl;
+        ss << "    " << player_1_board_state_.print();
+
         return ss.str();
     }
 
