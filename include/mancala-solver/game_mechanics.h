@@ -175,3 +175,114 @@ private:
         return std::nullopt;
     }
 };
+
+//! Runs the core game mechanics, storing any persistent state about which player is active.
+//! Assumes that the turn input corresponds to the active player.
+class GameMechanicsExecutor
+{
+public:
+    GameMechanicsExecutor(const TurnExecutor& turn_executor, const std::size_t starting_player_index) :
+                    turn_executor_{ turn_executor }, active_player_index_{ starting_player_index }
+    {
+        if ((active_player_index_ != 0) && (active_player_index_ != 1))
+        {
+            throw std::invalid_argument("`GameMechanicsExecutor()`: `active_player_index` must be 0 or 1");
+        }
+    }
+
+    //! Executes a turn for the active player, adjusting the `board_state` accordingly.
+    //! Returns true for a valid turn, false for an invalid turn (i.e. `pit_index` was empty).
+    bool playTurn(const std::size_t pit_index, BoardState& board_state)
+    {
+        const TurnResult result{ turn_executor_.playTurn(active_player_index_, pit_index, board_state) };
+        if (!result.valid)
+        {
+            return false;
+        }
+
+        if (!result.ended_in_bank)
+        {
+            active_player_index_ = (active_player_index_ + 1) % 2;
+        }
+
+        return true;
+    }
+
+    std::size_t getActivePlayerIndex() const
+    {
+        return active_player_index_;
+    }
+
+    bool isGameFinished(const BoardState& board_state) const
+    {
+        const SinglePlayerBoardState& player_0_board_state{ board_state.getPlayer0BoardState() };
+        if (isSinglePlayerBoardFinished(player_0_board_state))
+        {
+            return true;
+        }
+
+        const SinglePlayerBoardState& player_1_board_state{ board_state.getPlayer1BoardState() };
+        if (isSinglePlayerBoardFinished(player_1_board_state))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    //! Only returns with a value if the game is finished. Automatically cleans up `board_state` so
+    //! that all stones end up in the banks. Returns `2` if the game ended in a tie.
+    std::optional<std::size_t> getWinnerPlayerIndex(BoardState& board_state)
+    {
+        if (!isGameFinished(board_state))
+        {
+            return std::nullopt;
+        }
+
+        SinglePlayerBoardState& player_0_board_state{ board_state.getPlayer0BoardState() };
+        player_0_board_state.addStonesToBank(player_0_board_state.sumOfStonesInPits());
+        for (std::size_t i = 0; i < player_0_board_state.getNumPits(); ++i)
+        {
+            player_0_board_state.clearStonesFromPit(i);
+        }
+
+        SinglePlayerBoardState& player_1_board_state{ board_state.getPlayer1BoardState() };
+        player_1_board_state.addStonesToBank(player_1_board_state.sumOfStonesInPits());
+        for (std::size_t i = 0; i < player_1_board_state.getNumPits(); ++i)
+        {
+            player_1_board_state.clearStonesFromPit(i);
+        }
+
+        if (player_0_board_state.getNumStonesInBank() > player_1_board_state.getNumStonesInBank())
+        {
+            return 0;
+        }
+        else if (player_1_board_state.getNumStonesInBank() > player_0_board_state.getNumStonesInBank())
+        {
+            return 1;
+        }
+        else
+        {
+            return 2;
+        }
+    }
+
+private:
+    bool isSinglePlayerBoardFinished(const SinglePlayerBoardState& single_player_board_state) const
+    {
+        bool pits_are_clear{ true };
+        for (std::size_t i = 0; i < single_player_board_state.getNumPits(); ++i)
+        {
+            if(single_player_board_state.getNumStonesInPit(i) != 0)
+            {
+                pits_are_clear = false;
+                break;
+            }
+        }
+
+        return pits_are_clear;
+    }
+
+    TurnExecutor turn_executor_;
+    std::size_t active_player_index_;
+};

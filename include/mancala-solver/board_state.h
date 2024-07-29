@@ -122,7 +122,17 @@ public:
         return player_0_board_state_;
     }
 
+    const SinglePlayerBoardState& getPlayer0BoardState() const
+    {
+        return player_0_board_state_;
+    }
+
     SinglePlayerBoardState& getPlayer1BoardState()
+    {
+        return player_1_board_state_;
+    }
+
+    const SinglePlayerBoardState& getPlayer1BoardState() const
     {
         return player_1_board_state_;
     }

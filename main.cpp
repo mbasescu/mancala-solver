@@ -1,4 +1,5 @@
 #include <iostream>
+#include <optional>
 
 #include <board_state.h>
 #include <game_mechanics.h>
@@ -57,22 +58,65 @@ BoardState makeTestBoardState()
                        /*player_1_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 4, 4, 4, 4, 4 }, 0 }};
 }
 
+void printBoardForPlayer(const BoardState& board_state, const std::size_t player_index)
+{
+    if (player_index == 0)
+    {
+        std::cout << board_state.printForPlayer0() << std::endl;
+    }
+    else
+    {
+        std::cout << board_state.printForPlayer1() << std::endl;
+    }
+}
+
 int main(int argc, char** argv)
 {
     BoardState board_state{ makeTestBoardState() };
     const TurnExecutor turn_executor{};
+    GameMechanicsExecutor game_mechanics_executor{ turn_executor, /*starting_player_index*/ 0 };
 
-    std::cout << board_state.printForPlayer0() << std::endl;
-
-    for (std::size_t i = 0; i < 10; ++i)
+    for (std::size_t i = 0; i < 200; ++i)
     {
-        const std::size_t player_index{ i % 2 };
-        const std::size_t pit_index{ static_cast<std::size_t>(std::rand() % 7) };
-        const TurnResult result{ turn_executor.playTurn(player_index, pit_index, board_state) };
+        const std::optional<std::size_t> winner_player_index{ 
+            game_mechanics_executor.getWinnerPlayerIndex(board_state)
+        };
 
-        std::cout << "Turn - player_index: " << player_index << ", pit_index: " << pit_index << std::endl;
-        std::cout << "Result:\n" << result << std::endl << std::endl;
-        std::cout << board_state.printForPlayer0() << std::endl;
+        const std::size_t active_player_index{ game_mechanics_executor.getActivePlayerIndex() };
+        std::cout << "Active player: " << active_player_index << std::endl;
+
+        // Good to do this after calling `getWinnerPlayerIndex()` because that is responsible
+        // for cleaning up the board after it finishes.
+        printBoardForPlayer(board_state, active_player_index);
+        std::cout << std::endl;
+
+        if (winner_player_index.has_value())
+        {
+            if (winner_player_index.value() == 2)
+            {
+                std::cout << "Game ended in a tie!" << std::endl;
+            }
+
+            std::cout << "Game won by player (" << winner_player_index.value() << ")!" << std::endl;
+
+            break;
+        }
+
+        const std::size_t pit_index{ static_cast<std::size_t>(std::rand() % 7) };
+        const bool turn_valid{ game_mechanics_executor.playTurn(pit_index, board_state) };
+
+        std::cout << "Turn - pit_index: " << pit_index << std::endl;
+        std::cout << "Valid: " << turn_valid << std::endl << std::endl;
+        
+        if (active_player_index == 0)
+        {
+            std::cout << board_state.printForPlayer0() << std::endl;
+        }
+        else
+        {
+            std::cout << board_state.printForPlayer1() << std::endl;
+        }
+
         std::cout << "---------------------------------------------------" << std::endl;
     }
     
