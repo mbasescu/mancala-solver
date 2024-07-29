@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <optional>
 
 #include <board_state.h>
@@ -83,12 +84,12 @@ int main(int argc, char** argv)
         };
 
         const std::size_t active_player_index{ game_mechanics_executor.getActivePlayerIndex() };
-        std::cout << "Active player: " << active_player_index << std::endl;
 
         // Good to do this after calling `getWinnerPlayerIndex()` because that is responsible
         // for cleaning up the board after it finishes.
         printBoardForPlayer(board_state, active_player_index);
         std::cout << std::endl;
+        std::cout << "Active player: " << active_player_index << std::endl;
 
         if (winner_player_index.has_value())
         {
@@ -102,11 +103,33 @@ int main(int argc, char** argv)
             break;
         }
 
-        const std::size_t pit_index{ static_cast<std::size_t>(std::rand() % 7) };
-        const bool turn_valid{ game_mechanics_executor.playTurn(pit_index, board_state) };
+        std::size_t pit_index;
+        std::cout << "Enter the pit index for your turn: ";
+        std::cin >> pit_index;
+        std::cout << std::endl;
+        if (std::cin.fail())
+        {
+            // Clear the error flag
+            std::cin.clear();
+            // Discard invalid input
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter an integer." << std::endl;
+            std::cout << "---------------------------------------------------" << std::endl;
 
-        std::cout << "Turn - pit_index: " << pit_index << std::endl;
-        std::cout << "Valid: " << turn_valid << std::endl << std::endl;
+            continue;
+        }
+
+        // Discard any subsequent invalid input
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        const bool turn_valid{ game_mechanics_executor.playTurn(pit_index, board_state) };
+        if (!turn_valid)
+        {
+            std::cout << "Turn invalid! Must provide a pit index in the range [0-"
+                      << board_state.getNumPits() - 1 << "]." << std::endl;
+            std::cout << "---------------------------------------------------" << std::endl;
+            continue;
+        }
         
         if (active_player_index == 0)
         {
