@@ -4,6 +4,7 @@
 
 #include <board_state.h>
 #include <game_mechanics.h>
+#include <solver.h>
 
 // Board layout (pit indices for each player are specified within the `( )` markings)
 //
@@ -53,10 +54,16 @@
 // ...
 
 
-BoardState makeTestBoardState()
+BoardState makeDefaultBoardState()
 {
     return BoardState{ /*player_0_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 4, 4, 4, 4, 4 }, 0 }, 
                        /*player_1_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 4, 4, 4, 4, 4, 4 }, 0 }};
+}
+
+BoardState makeTestBoardState()
+{
+    return BoardState{ /*player_0_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 0, 0, 3, 2, 1, 1 }, 0 },
+                       /*player_1_board_state*/ SinglePlayerBoardState{ std::vector<int>{ 7, 0, 0, 0, 2, 1 }, 0 }};
 }
 
 void printBoardForPlayer(const BoardState& board_state, const std::size_t player_index)
@@ -71,13 +78,9 @@ void printBoardForPlayer(const BoardState& board_state, const std::size_t player
     }
 }
 
-int main(int argc, char** argv)
+void playManualGame(BoardState board_state, GameMechanicsExecutor game_mechanics_executor)
 {
-    BoardState board_state{ makeTestBoardState() };
-    const TurnExecutor turn_executor{};
-    GameMechanicsExecutor game_mechanics_executor{ turn_executor, /*starting_player_index*/ 0 };
-
-    for (std::size_t i = 0; i < 200; ++i)
+    while (true)
     {
         const std::optional<std::size_t> winner_player_index{ 
             game_mechanics_executor.getWinnerPlayerIndex(board_state)
@@ -142,6 +145,31 @@ int main(int argc, char** argv)
 
         std::cout << "---------------------------------------------------" << std::endl;
     }
+}
+
+int main(int argc, char** argv)
+{
+    // Manual gameplay code
+    // {
+    //     const BoardState board_state{ makeDefaultBoardState() };
+    //     const TurnExecutor turn_executor{};
+    //     const GameMechanicsExecutor game_mechanics_executor{ turn_executor, /*starting_player_index*/ 0 };
+
+    //     playManualGame(board_state, game_mechanics_executor);
+    // }
+
+    // Solver test code
+    {
+        const BoardState board_state{ makeTestBoardState() };
+        const TurnExecutor turn_executor{};
+        const GameMechanicsExecutor game_mechanics_executor{ turn_executor, /*starting_player_index*/ 0 };
     
+        Solver solver{};
+        const std::pair<std::size_t, bool> solution{ solver.solve(board_state, game_mechanics_executor) };
+
+        std::cout << "Solution pit index: " << solution.first << std::endl;
+        std::cout << "Win guaranteed: " << solution.second << std::endl;
+    }
+
     return 0;
 }
